@@ -1,4 +1,5 @@
 import * as React from 'react'
+import axios from 'axios';
 
 import {
   render,
@@ -15,6 +16,7 @@ import App, {
   InputWithLabel,
 } from './App';
 import { createRenderer } from 'react-dom/test-utils';
+import { isJSDocAugmentsTag } from 'typescript';
 
 const storyOne = {
   title: 'React',
@@ -24,6 +26,8 @@ const storyOne = {
   points: 4,
   objectID: 0,
 };
+
+jest.mock('axios');
 
 const storyTwo = {
   title: 'Redux',
@@ -159,5 +163,83 @@ describe('Item', () => {
 
       expect(searchFormProps.onSearchSubmit).toHaveBeenCalledTimes(1);
     });
+  });
+
+  describe('List', () => {
+    const listProps = {
+      list: [storyOne],
+    };
+
+    test('renders stories on a list', () => {
+      render(<List {...listProps} />);
+
+      expect(screen.getByText('Jordan Walke')).toBeInTheDocument();
+      expect(screen.getByText('React')).toHaveAttribute(
+        'href',
+        'https://reactjs.org'
+      );
+    });
+  });
+});
+
+describe('App', () => {
+  test('suceeds fetching data', async () => {
+    const promise = Promise.resolve({
+      data: {
+        hits: stories,
+      },
+    });
+
+    axios.get.mockImplementationOnce(() => promise);
+
+    render(<App />);
+
+    expect(screen.queryByText(/Loading/)).toBeInTheDocument();
+
+    await act(() => promise);
+
+    expect(screen.queryByText(/Loading/)).toBeNull();
+    
+    expect(screen.getByText('React')).toBeInTheDocument();
+    expect(screen.getByText('Redux')).toBeInTheDocument();
+    expect(screen.getAllByRole('button').length).toBe(3);
+  });
+
+  test('fails fetching data', async () => {
+    const promise = Promise.reject();
+
+    axios.get.mockImplementationOnce(() => promise);
+
+    render(<App />);
+
+    expect(screen.queryByText(/Loading/)).toBeInTheDocument();
+
+    try {
+      await act(() => promise);
+    } catch (error) {
+      // eslint-disable-next-line jest/no-conditional-expect
+      expect(screen.queryByText(/Loading/)).toBeNull();
+      // eslint-disable-next-line jest/no-conditional-expect
+      expect(screen.queryByText(/went wrong/)).toBeInTheDocument();
+    }
+  });
+
+  test('removes a story', async () => {
+    const promise = Promise.resolve({
+      data: {
+        hits: stories,
+      },
+    });
+
+    axios.get.mockImplementationOnce(() => promise);
+
+    render(<App />);
+
+    await act(() => promise);
+
+    fireEvent.click(screen.getAllByRole('button')[1]);
+
+    expect(screen.getAllByRole('button').length).toBe(2);
+    expect(screen.queryByText('Jordan Walke')).toBeNull();
   });
 });
