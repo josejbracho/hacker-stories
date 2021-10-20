@@ -17,6 +17,7 @@ import App, {
 } from './App';
 import { createRenderer } from 'react-dom/test-utils';
 import { isJSDocAugmentsTag } from 'typescript';
+import { ImRtl } from 'react-icons/im';
 
 const storyOne = {
   title: 'React',
@@ -126,59 +127,47 @@ describe('Item', () => {
 
     expect(handleRemoveItem).toHaveBeenCalledTimes(1);
   });
+});
 
-  describe('SearchForm', () => {
-    const searchFormProps = {
-      searchTerm: 'React',
-      onSearchInput: jest.fn(),
-      onSearchSubmit: jest.fn(),
-    };
-
-    test('renders the input field with its value', () => {
-      render(<SearchForm {...searchFormProps} />);
-
-      expect(screen.getByDisplayValue('React')).toBeInTheDocument();
-    });
-
-    test('renders the correct label', () => {
-      render(<SearchForm {...searchFormProps} />);
-
-      expect(screen.getByLabelText(/Search/)).toBeInTheDocument();
-    });
-
-    test('calls onSeachInput on input field change', () => {
-      render(<SearchForm {...searchFormProps} />);
-
-      fireEvent.change(screen.getByDisplayValue('React'), {
-        target: { value: 'Redux' },
-      });
-
-      expect(searchFormProps.onSearchInput).toHaveBeenCalledTimes(1);
-    });
-
-    test('call onSearchSubmit on button submit click', () => {
-      render(<SearchForm {...searchFormProps} />);
-
-      fireEvent.submit(screen.getByRole('button'));
-
-      expect(searchFormProps.onSearchSubmit).toHaveBeenCalledTimes(1);
-    });
+describe('SearchForm', () => {
+  const searchFormProps = {
+    searchTerm: 'React',
+    onSearchInput: jest.fn(),
+    onSearchSubmit: jest.fn(),
+  };
+  test('renders the input field with its value', () => {
+    render(<SearchForm {...searchFormProps} />);
+    expect(screen.getByDisplayValue('React')).toBeInTheDocument();
   });
-
-  describe('List', () => {
-    const listProps = {
-      list: [storyOne],
-    };
-
-    test('renders stories on a list', () => {
-      render(<List {...listProps} />);
-
-      expect(screen.getByText('Jordan Walke')).toBeInTheDocument();
-      expect(screen.getByText('React')).toHaveAttribute(
-        'href',
-        'https://reactjs.org'
-      );
+  test('renders the correct label', () => {
+    render(<SearchForm {...searchFormProps} />);
+    expect(screen.getByLabelText(/Search/)).toBeInTheDocument();
+  });
+  test('calls onSeachInput on input field change', () => {
+    render(<SearchForm {...searchFormProps} />);
+    fireEvent.change(screen.getByDisplayValue('React'), {
+      target: { value: 'Redux' },
     });
+    expect(searchFormProps.onSearchInput).toHaveBeenCalledTimes(1);
+  });
+  test('call onSearchSubmit on button submit click', () => {
+    render(<SearchForm {...searchFormProps} />);
+    fireEvent.submit(screen.getByRole('button'));
+    expect(searchFormProps.onSearchSubmit).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('List', () => {
+  const listProps = {
+    list: [storyOne],
+  };
+  test('renders stories on a list', () => {
+    render(<List {...listProps} />);
+    expect(screen.getByText('Jordan Walke')).toBeInTheDocument();
+    expect(screen.getByText('React')).toHaveAttribute(
+      'href',
+      'https://reactjs.org'
+    );
   });
 });
 
@@ -241,5 +230,67 @@ describe('App', () => {
 
     expect(screen.getAllByRole('button').length).toBe(2);
     expect(screen.queryByText('Jordan Walke')).toBeNull();
+  });
+
+  test('searches for a specific story', async () => {
+    const reactPromise = Promise.resolve({
+      data: {
+        hits: stories,
+      },
+    });
+
+    const anotherStory = {
+      title: 'JavaScript',
+      url: 'https://en.wikipedia.org/wiki/JavaScript',
+      author: 'Brendan Eich',
+      num_comments: 15,
+      points: 10,
+      objectID: 3,
+    };
+
+    const javascriptPromise = Promise.resolve({
+      data: {
+        hits: [anotherStory],
+      }
+    });
+
+    axios.get.mockImplementation((url) => {
+      if (url.includes('React')) {
+        return reactPromise;
+      }
+      if (url.includes('JavaScript')) {
+        return javascriptPromise;
+      }
+
+      throw Error();
+    });
+
+    render(<App />);
+
+    await act(() => reactPromise);
+
+    expect(screen.queryByDisplayValue('React')).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('JavaScript')).toBeNull();
+
+    expect(screen.queryByText('Jordan Walke')).toBeInTheDocument();
+    expect(screen.queryByText('Dan Abramov, Andrew Clark')).toBeInTheDocument();
+    expect(screen.queryByText('Brendan Eich')).toBeNull();
+
+    fireEvent.change(screen.queryByDisplayValue('React'), {
+      target: {
+        value: 'JavaScript',
+      },
+    });
+    
+    expect(screen.queryByDisplayValue('React')).toBeNull();
+    expect(screen.queryByDisplayValue('JavaScript')).toBeInTheDocument();
+
+    fireEvent.submit(screen.getByRole('button', { name: /submit/i}));
+
+    await act(() => javascriptPromise);
+
+    expect(screen.queryByText('Jordan Walke')).toBeNull();
+    expect(screen.queryByText('Dan Abramov, Andrew Clark')).toBeNull();
+    expect(screen.queryByText('Brendan Eich')).toBeInTheDocument();
   });
 });

@@ -196,7 +196,8 @@ const SearchForm = ({
       <strong>Search:</strong>
     </InputWithLabel>
 
-    <button 
+    <button  
+      aria-label='submit'
       type="submit" 
       disabled={!searchTerm}
       className="button button_large"  
@@ -216,7 +217,7 @@ type InputWithLabelProps = {
 }
 
 const InputWithLabel = ({ 
-  id, 
+  id,   
   value, 
   type = 'text',
   onInputChange,
