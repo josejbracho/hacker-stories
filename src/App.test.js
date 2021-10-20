@@ -155,6 +155,11 @@ describe('SearchForm', () => {
     fireEvent.submit(screen.getByRole('button'));
     expect(searchFormProps.onSearchSubmit).toHaveBeenCalledTimes(1);
   });
+
+  test('renders snapshot', () => {
+    const { container } = render(<SearchForm {...searchFormProps} />);
+    expect(container.firstChild).toMatchSnapshot();
+  });
 });
 
 describe('List', () => {
@@ -281,7 +286,7 @@ describe('App', () => {
         value: 'JavaScript',
       },
     });
-    
+
     expect(screen.queryByDisplayValue('React')).toBeNull();
     expect(screen.queryByDisplayValue('JavaScript')).toBeInTheDocument();
 
