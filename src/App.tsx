@@ -2,8 +2,9 @@ import * as React from 'react';
 import axios from 'axios';
 
 import './App.css';
-import { BiSearchAlt } from 'react-icons/bi'
-import { ImCheckmark2 } from 'react-icons/im'
+import { SearchForm } from './SearchForm';
+import { List } from './List';
+
 
 const API_ENDPOINT = 'https://hn.algolia.com/api/v1/search?query=';
 
@@ -175,122 +176,6 @@ const App = () => {
   );
 };
 
-type SearchFormProps = {
-  searchTerm: string;
-  onSearchInput: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onSearchSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
-};
-
-const SearchForm = ({
-  searchTerm,
-  onSearchInput,
-  onSearchSubmit,
-}: SearchFormProps) => (
-  <form onSubmit={onSearchSubmit} className="search-form">
-    <InputWithLabel
-      id="search"
-      value={searchTerm}
-      isFocused
-      onInputChange={onSearchInput}
-    >
-      <strong>Search:</strong>
-    </InputWithLabel>
-
-    <button  
-      aria-label='submit'
-      type="submit" 
-      disabled={!searchTerm}
-      className="button button_large"  
-    >
-      <BiSearchAlt />
-    </button>
-  </form>
-);
-
-type InputWithLabelProps = {
-  id: string;
-  value: string;
-  type?: string;
-  onInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  isFocused?: boolean;
-  children: React.ReactNode;
-}
-
-const InputWithLabel = ({ 
-  id,   
-  value, 
-  type = 'text',
-  onInputChange,
-  isFocused,
-  children,
-}: InputWithLabelProps) => {
-  const inputRef = React.useRef<HTMLInputElement>(null!);
-  
-  React.useEffect(() => { 
-    if (isFocused && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isFocused]);
-  
-return (
-  <>
-    <label htmlFor={id} className="label">
-      {children}
-    </label>
-    &nbsp;
-    <input
-      ref={inputRef}
-      id={id}
-      type={type}
-      value={value}
-      onChange={onInputChange}
-    />
-  </>
-  );
-};
-
-type ListProps = {
-  list: Stories;
-  onRemoveItem: (item: Story) => void;
-}
-
-const List = ({ list, onRemoveItem }: ListProps) => (
-  <ul>
-    {list.map((item) => (
-      <Item 
-        key={item.objectID} 
-        item = {item} 
-        onRemoveItem={onRemoveItem} 
-      />
-    ))}
-  </ul>
-);
-
-type ItemProps = {
-  item: Story;
-  onRemoveItem: (item: Story) => void;
-};
-
-const Item = ({ item, onRemoveItem }: ItemProps) => (
- <li className="item">
-    <span style={{ width: "40%"  }}>
-      <a href={item.url}>{item.title}</a>
-    </span>
-    <span style={{ width: '30%' }}>{item.author}</span>
-    <span style={{ width: '10%' }}>{item.num_comments}</span>
-    <span style={{ width: '10%' }}>{item.points}</span>
-    <span style={{ width: '10%' }}>
-      <button
-      type ="button" 
-      onClick={() => onRemoveItem(item)}
-      className="button button_small"
-      >
-        <ImCheckmark2 />
-      </button>
-    </span>
-  </li>
-);
-
 export default App;
 
-export { storiesReducer, SearchForm, InputWithLabel, List, Item };
+export type { Story, Stories }
