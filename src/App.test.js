@@ -13,11 +13,10 @@ import App, {
   Item,
   List,
   SearchForm,
-  InputWithLabel,
 } from './App';
-import { createRenderer } from 'react-dom/test-utils';
-import { isJSDocAugmentsTag } from 'typescript';
-import { ImRtl } from 'react-icons/im';
+// import { createRenderer } from 'react-dom/test-utils';
+// import { isJSDocAugmentsTag } from 'typescript';
+// import { ImRtl } from 'react-icons/im';
 
 const storyOne = {
   title: 'React',
