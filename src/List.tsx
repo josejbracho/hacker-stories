@@ -14,30 +14,42 @@ const SORTS = {
     NONE: (list : Stories) => list,
     TITLE: (list: Stories) => sortBy(list, 'title'),
     AUTHOR: (list: Stories) => sortBy(list, 'author'),
-    COMMENTS: (list: Stories) => sortBy(list, 'comments'),
+    COMMENTS: (list: Stories) => sortBy(list, 'num_comments'),
     POINTS: (list: Stories) => sortBy(list, 'points')
 }
 
 const List = ({ list, onRemoveItem }: ListProps) => {
-    let sort : keyof typeof SORTS
-    let setSort : any;
-    [sort, setSort] = React.useState('NONE');
 
-    const handleSort = (sortKey: string) => {
-        setSort(sortKey);
+    type sorting = {
+        sortKey: keyof typeof SORTS;
+        isReverse: boolean;
     }
 
-    const sortFunction = SORTS[sort];
-    const sortedList = sortFunction(list);
+    const [sort, setSort] = React.useState<sorting>({
+        sortKey: 'NONE', 
+        isReverse: false,
+    });
+
+    const handleSort = (sortKey: keyof typeof SORTS) => {
+        const isReverse = sort.sortKey === sortKey && !sort.isReverse;
+        setSort({sortKey: sortKey, isReverse: isReverse});
+
+        setSort({sortKey, isReverse});
+    };
+
+    const sortFunction = SORTS[sort.sortKey];
+    const sortedList = sort.isReverse
+        ? sortFunction(list).reverse()
+        : sortFunction(list);
 
     return (
         <div>
             <div>
                 <li style={{ display: 'flex'}}>
                     <span style={{ width: "40%" }}>
-                    <button type="button" onClick={() => handleSort('TITLE')}>
-                        Title
-                    </button>
+                        <button type="button" onClick={() => handleSort('TITLE')}>
+                            Title 
+                        </button>
                     </span>
                     <span style={{ width: "30%" }}>
                         <button type="button" onClick={() => handleSort('AUTHOR')}>
