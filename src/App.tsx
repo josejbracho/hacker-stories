@@ -101,7 +101,24 @@ const storiesReducer = (
 };
 
 const getLastSearches = (urls: Array<string>) => 
-  urls.slice(-5).map((url: string) => extractSearchTerm(url));
+  urls
+  .reduce((result: Array<string>, url: string, index: number) => {
+    const searchTerm = extractSearchTerm(url);
+
+    if (index === 0) {
+      return result.concat(searchTerm);
+    }
+
+    const previousSearchTerm = result[result.length - 1];
+
+    if (searchTerm === previousSearchTerm) {
+      return result;
+    } else {
+      return result.concat(searchTerm);
+    }
+  }, [])
+  .slice(-6)
+  .slice(0 , -1);
 
 const extractSearchTerm = (url: string) => url.replace(API_ENDPOINT, '');
 
@@ -162,6 +179,8 @@ const App = () => {
   };
 
   const handleLastSearch = (searchTerm: string) => {
+    setSearchTerm(searchTerm);
+
     handleSearch(searchTerm);
   }
 
@@ -170,7 +189,7 @@ const App = () => {
     setUrls(urls.concat(url));
   }
 
-  const LastSearches : Array<string> = getLastSearches(urls);
+  const lastSearches = getLastSearches(urls);
 
   return (
     <div className="container">
@@ -182,15 +201,10 @@ const App = () => {
         onSearchSubmit={handleSearchSubmit}
       />
 
-      {LastSearches.map((searchTerm: string, index: number) => (
-        <button
-          key={searchTerm + index}
-          type="button"
-          onClick={() => handleLastSearch(searchTerm)}
-        >
-          {searchTerm}  
-        </button>
-      ))}
+      <LastSearches 
+        lastSearches={lastSearches}
+        onLastSearch={handleLastSearch}
+      />
 
       {stories.isError && <p>Something went wrong ...</p>}
 
@@ -202,6 +216,25 @@ const App = () => {
     </div>
   );
 };
+
+type Searches = {
+  lastSearches: Array<string>,
+  onLastSearch: (searchTerm: string) => void
+}
+
+const LastSearches = ({ lastSearches, onLastSearch }: Searches) => (
+  <>
+    {lastSearches.map((searchTerm, index) => (
+      <button
+        key={`${searchTerm} + ${index}`}
+        type='button'
+        onClick={() => onLastSearch(searchTerm)}
+      >
+        {searchTerm}
+      </button>
+    ))}
+  </>
+);
 
 export default App;
 
