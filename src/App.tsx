@@ -1,12 +1,15 @@
 import * as React from 'react';
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 
 import './App.css';
 import { SearchForm } from './SearchForm';
 import { List } from './List';
 
 
-const API_ENDPOINT = 'https://hn.algolia.com/api/v1/search?query=';
+const API_BASE = 'https://hn.algolia.com/api/v1/';
+const API_SEARCH = '/search';
+const PARAM_SEARCH = 'query=';
+const PARAM_PAGE = 'page=';
 
 const useSemiPersistentState = (
   key: string,
@@ -34,8 +37,14 @@ type Story = {
 
 type Stories = Array<Story>;
 
+interface RawData {
+  hits: Stories,
+  page: number,
+} 
+
 type StoriesState = {
-  data: Stories;
+  data: Stories;   //this data must match the type on payload
+  page: number;
   isLoading: boolean;
   isError: boolean;
 };
@@ -46,7 +55,7 @@ interface StoriesFetchInitAction {
 
 interface StoriesFetchSuccessAction {
   type: 'STORIES_FETCH_SUCCESS';
-  payload: Stories;
+  payload: RawData;  //must be an array that contains { list: Stories, page: number }
 }
 
 interface StoriesFetchFailureAction {
@@ -80,7 +89,8 @@ const storiesReducer = (
         ...state,
         isLoading: false,
         isError: false,
-        data: action.payload,
+        data: action.payload.hits,
+        page: action.payload.page,
       };
     case 'STORIES_FETCH_FAILURE':
       return {
@@ -120,7 +130,8 @@ const getLastSearches = (urls: Array<string>) =>
   .slice(-6)
   .slice(0 , -1);
 
-const extractSearchTerm = (url: string) => url.replace(API_ENDPOINT, '');
+const extractSearchTerm = (url: string) => 
+  url.substring(url.lastIndexOf('?') + 1, url.lastIndexOf('&')).replace(PARAM_SEARCH, '');
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useSemiPersistentState(
@@ -128,13 +139,13 @@ const App = () => {
     'React'
   );
 
-  const getUrl = (searchTerm: string) => `${API_ENDPOINT}${searchTerm}`;
+  const getUrl = (searchTerm: string, page: number) => `${API_BASE}${API_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}`;
 
-  const [urls, setUrls] = React.useState([getUrl(searchTerm)]);
+  const [urls, setUrls] = React.useState([getUrl(searchTerm, 0)]);
 
   const [stories, dispatchStories] = React.useReducer(
     storiesReducer,
-    { data: [], isLoading: false, isError: false }
+    { data: [], page: 0, isLoading: false, isError: false }
   );
 
   const handleFetchStories = React.useCallback(async () => {
@@ -142,11 +153,15 @@ const App = () => {
 
     try {
       const lastUrl = urls[urls.length - 1];
-      const result = await axios.get<any>(lastUrl);
+      const result : AxiosResponse<RawData> = await axios.get(lastUrl);
+      console.log(result);
       
       dispatchStories({
         type: 'STORIES_FETCH_SUCCESS',
-        payload: result.data.hits,
+        payload: {
+          hits: result.data.hits,
+          page: result.data.page,
+        }
       });
     } catch {
       dispatchStories( { type: 'STORIES_FETCH_FAILURE' });
@@ -173,7 +188,7 @@ const App = () => {
   const handleSearchSubmit = (
     event: React.FormEvent<HTMLFormElement>
   ) => {
-    handleSearch(searchTerm);
+    handleSearch(searchTerm, 0);
 
     event.preventDefault();
   };
@@ -181,15 +196,21 @@ const App = () => {
   const handleLastSearch = (searchTerm: string) => {
     setSearchTerm(searchTerm);
 
-    handleSearch(searchTerm);
+    handleSearch(searchTerm, 0);
   }
 
-  const handleSearch = (searchTerm: string) => {
-    const url = getUrl(searchTerm);
+  const handleSearch = (searchTerm: string, page: number) => {
+    const url = getUrl(searchTerm, page);
     setUrls(urls.concat(url));
   }
 
   const lastSearches = getLastSearches(urls);
+
+  const handleMore = () => {
+    const lastUrl = urls[urls.length - 1];
+    const searchTerm = extractSearchTerm(lastUrl);
+    handleSearch(searchTerm, stories.page + 1);
+  };
 
   return (
     <div className="container">
@@ -213,6 +234,10 @@ const App = () => {
       ) : (
       <List list={stories.data} onRemoveItem={handleRemoveStory} />
       )}
+
+      <button type="button" onClick={handleMore}>
+        More
+      </button>
     </div>
   );
 };
