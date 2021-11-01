@@ -43,7 +43,7 @@ interface RawData {
 } 
 
 type StoriesState = {
-  data: Stories;   //this data must match the type on payload
+  data: Stories;   
   page: number;
   isLoading: boolean;
   isError: boolean;
@@ -55,7 +55,7 @@ interface StoriesFetchInitAction {
 
 interface StoriesFetchSuccessAction {
   type: 'STORIES_FETCH_SUCCESS';
-  payload: RawData;  //must be an array that contains { list: Stories, page: number }
+  payload: RawData; 
 }
 
 interface StoriesFetchFailureAction {
@@ -89,7 +89,10 @@ const storiesReducer = (
         ...state,
         isLoading: false,
         isError: false,
-        data: action.payload.hits,
+        data: 
+          action.payload.page === 0
+            ? action.payload.hits
+            : state.data.concat(action.payload.hits),
         page: action.payload.page,
       };
     case 'STORIES_FETCH_FAILURE':
@@ -229,15 +232,15 @@ const App = () => {
 
       {stories.isError && <p>Something went wrong ...</p>}
 
+      <List list={stories.data} onRemoveItem={handleRemoveStory} />
+
       {stories.isLoading ? (
         <p>Loading ...</p>
       ) : (
-      <List list={stories.data} onRemoveItem={handleRemoveStory} />
+        <button type="button" onClick={handleMore}>
+          More
+        </button>
       )}
-
-      <button type="button" onClick={handleMore}>
-        More
-      </button>
     </div>
   );
 };
