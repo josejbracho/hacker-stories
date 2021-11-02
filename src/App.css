@@ -1,11 +1,13 @@
 .container {
-  height: 100vw;
-  padding: 20px;
+  height: 50vw;
+  padding: 22px;
 
   background: #83a4d4;
   background: linear-gradient(to left, #b6fbff, #83a4d4);
 
   color: #171212;
+
+  background-repeat: repeat-y;
 }
 
 .headlinePrimary {

@@ -4,7 +4,8 @@ import axios, { AxiosResponse } from 'axios';
 import './App.css';
 import { SearchForm } from './SearchForm';
 import { List } from './List';
-
+import { BiArrowFromRight } from 'react-icons/bi';
+import { BiArrowFromLeft } from 'react-icons/bi';
 
 const API_BASE = 'https://hn.algolia.com/api/v1/';
 const API_SEARCH = '/search';
@@ -89,10 +90,7 @@ const storiesReducer = (
         ...state,
         isLoading: false,
         isError: false,
-        data: 
-          action.payload.page === 0
-            ? action.payload.hits
-            : state.data.concat(action.payload.hits),
+        data: action.payload.hits,
         page: action.payload.page,
       };
     case 'STORIES_FETCH_FAILURE':
@@ -215,6 +213,15 @@ const App = () => {
     handleSearch(searchTerm, stories.page + 1);
   };
 
+  const handleLess = () => {
+    const lastUrl = urls[urls.length - 1];
+    const searchTerm = extractSearchTerm(lastUrl);
+    if (stories.page -1 >= 0) {
+      handleSearch(searchTerm, stories.page - 1);
+    }
+  };
+
+
   return (
     <div className="container">
       <h1 className="headline-primary">My Hacker Stories</h1>
@@ -232,15 +239,17 @@ const App = () => {
 
       {stories.isError && <p>Something went wrong ...</p>}
 
-      <List list={stories.data} onRemoveItem={handleRemoveStory} />
-
       {stories.isLoading ? (
         <p>Loading ...</p>
       ) : (
-        <button type="button" onClick={handleMore}>
-          More
-        </button>
+          <List list={stories.data} onRemoveItem={handleRemoveStory} />
       )}
+      <button type="button" onClick={handleLess}>
+        <BiArrowFromRight />
+      </button>
+      <button type="button" onClick={handleMore}>
+        <BiArrowFromLeft />
+      </button>
     </div>
   );
 };
